@@ -469,10 +469,20 @@ def _ensure_flask_app():
             print(f"Warning: Could not import app from app.py: {e}")
             print("Creating minimal Flask app for worker...")
             flask_app = Flask(__name__)
-            flask_app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-                'DATABASE_URL', 
-                'postgresql://invoice_user:invoice_pass@db:5432/invoice_db'
-            )
+            # Use individual environment variables or fall back to DATABASE_URL or defaults
+            POSTGRES_USER = os.getenv('POSTGRES_USER', 'invoice_user')
+            POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'invoice_pass')
+            POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'db')
+            POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
+            POSTGRES_DB = os.getenv('POSTGRES_DB', 'invoice_db')
+            
+            # Construct DATABASE_URL from individual variables if DATABASE_URL is not set
+            if os.getenv('DATABASE_URL'):
+                database_url = os.getenv('DATABASE_URL')
+            else:
+                database_url = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
+            
+            flask_app.config['SQLALCHEMY_DATABASE_URI'] = database_url
             flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
             db.init_app(flask_app)
             _flask_app = flask_app

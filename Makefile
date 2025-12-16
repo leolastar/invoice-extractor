@@ -37,7 +37,11 @@ setup: ## Initial setup - create .env file
 	@if [ ! -f backend/.env ]; then \
 		echo "Creating backend/.env file..."; \
 		echo "OPENAI_API_KEY=your_openai_api_key_here" > backend/.env; \
-		echo "DATABASE_URL=postgresql://invoice_user:invoice_pass@db:5432/invoice_db" >> backend/.env; \
+		echo "POSTGRES_USER=invoice_user" >> backend/.env; \
+		echo "POSTGRES_PASSWORD=invoice_pass" >> backend/.env; \
+		echo "POSTGRES_HOST=db" >> backend/.env; \
+		echo "POSTGRES_PORT=5432" >> backend/.env; \
+		echo "POSTGRES_DB=invoice_db" >> backend/.env; \
 		echo "Please edit backend/.env and add your OpenAI API key"; \
 	else \
 		echo "backend/.env already exists"; \
@@ -46,8 +50,8 @@ setup: ## Initial setup - create .env file
 test: ## Run tests (placeholder for future test suite)
 	@echo "Tests not yet implemented"
 
-db-shell: ## Access PostgreSQL shell
-	docker-compose exec db psql -U invoice_user -d invoice_db
+db-shell: ## Access PostgreSQL shell (uses POSTGRES_USER and POSTGRES_DB env vars or defaults)
+	@docker-compose exec db sh -c 'psql -U "$${POSTGRES_USER:-invoice_user}" -d "$${POSTGRES_DB:-invoice_db}"'
 
 db-reset: ## Reset database (WARNING: deletes all data)
 	docker-compose down -v

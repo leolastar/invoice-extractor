@@ -7,7 +7,12 @@ host="$1"
 shift
 cmd="$@"
 
-until PGPASSWORD=invoice_pass psql -h "$host" -U invoice_user -d invoice_db -c '\q'; do
+# Use environment variables with defaults
+POSTGRES_USER="${POSTGRES_USER:-invoice_user}"
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-invoice_pass}"
+POSTGRES_DB="${POSTGRES_DB:-invoice_db}"
+
+until PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$host" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\q'; do
   >&2 echo "PostgreSQL is unavailable - sleeping"
   sleep 1
 done

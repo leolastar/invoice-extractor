@@ -16,24 +16,34 @@ app = Flask(__name__)
 CORS(app)
 
 # Database configuration
-# Format: postgresql://username:password@host:port/database_name
-DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://invoice_user:invoice_pass@db:5432/invoice_db')
+# Use individual environment variables or fall back to DATABASE_URL or defaults
+POSTGRES_USER = os.getenv('POSTGRES_USER', 'invoice_user')
+POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'invoice_pass')
+POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'db')
+POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
+POSTGRES_DB = os.getenv('POSTGRES_DB', 'invoice_db')
+
+# Construct DATABASE_URL from individual variables if DATABASE_URL is not set
+if os.getenv('DATABASE_URL'):
+    DATABASE_URL = os.getenv('DATABASE_URL')
+else:
+    DATABASE_URL = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
 
 # Validate and fix connection string if needed (skip in testing mode)
 if not app.config.get('TESTING') and DATABASE_URL:
     # Ensure database name is present (not using username as database)
-    if DATABASE_URL.endswith('@db:5432') or DATABASE_URL.endswith('@db'):
-        DATABASE_URL = DATABASE_URL + '/invoice_db'
+    if DATABASE_URL.endswith(f'@{POSTGRES_HOST}:{POSTGRES_PORT}') or DATABASE_URL.endswith(f'@{POSTGRES_HOST}'):
+        DATABASE_URL = DATABASE_URL + f'/{POSTGRES_DB}'
     # Fix common mistake: using username as database name
-    if '/invoice_user' in DATABASE_URL and not DATABASE_URL.endswith('/invoice_db'):
-        DATABASE_URL = DATABASE_URL.replace('/invoice_user', '/invoice_db')
+    if f'/{POSTGRES_USER}' in DATABASE_URL and not DATABASE_URL.endswith(f'/{POSTGRES_DB}'):
+        DATABASE_URL = DATABASE_URL.replace(f'/{POSTGRES_USER}', f'/{POSTGRES_DB}')
 
 # Set database URI - use test database if TESTING is set
 if os.getenv('TESTING') == '1' or app.config.get('TESTING'):
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
-    print(f"Database URL configured: {DATABASE_URL.split('@')[0]}@***/***")  # Log without credentials
+    print(f"Database URL configured: {POSTGRES_USER}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}")  # Log without password
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'uploads'

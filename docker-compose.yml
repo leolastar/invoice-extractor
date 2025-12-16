@@ -13,15 +13,19 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: invoice_user
-      POSTGRES_PASSWORD: invoice_pass
-      POSTGRES_DB: invoice_db
+      POSTGRES_USER: ${POSTGRES_USER:-invoice_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-invoice_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-invoice_db}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U invoice_user -d invoice_db"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-invoice_user} -d ${POSTGRES_DB:-invoice_db}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -36,7 +40,13 @@ services:
       - ./backend/.env
     environment:
       FLASK_ENV: development
-      DATABASE_URL: postgresql://invoice_user:invoice_pass@db:5432/invoice_db
+      POSTGRES_USER: ${POSTGRES_USER:-invoice_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-invoice_pass}
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-invoice_db}
+      # DATABASE_URL can be set directly, or will be constructed from individual variables above in app.py
+      DATABASE_URL: ${DATABASE_URL:-}
       # OPENAI_API_KEY is loaded from env_file (.env) above
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
@@ -59,7 +69,13 @@ services:
       - ./backend/.env
     environment:
       FLASK_ENV: development
-      DATABASE_URL: postgresql://invoice_user:invoice_pass@db:5432/invoice_db
+      POSTGRES_USER: ${POSTGRES_USER:-invoice_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-invoice_pass}
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-invoice_db}
+      # DATABASE_URL can be set directly, or will be constructed from individual variables above in app.py
+      DATABASE_URL: ${DATABASE_URL:-}
       # OPENAI_API_KEY is loaded from env_file (.env) above
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
